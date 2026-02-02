@@ -72,7 +72,7 @@ async function runCheck() {
 
                 // PREPARAMOS EL MENSAJE
                 const messageOptions = {
-                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor <@&${CONFIG.ROLE_SOLO_NOOB}> se hizo Wipe.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime}\n\n¡A poppear! <:scrap:1467876485128916992>\n\n\`${connectCommand}\`\n\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
+                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor <@&${CONFIG.ROLE_SOLO_NOOB}> hizo Wipe.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime}\n\n¡A poppear! <:scrap:1467876485128916992>\n\n\`${connectCommand}\`\n\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
                 };
 
                 // AGREGAMOS LA IMAGEN SOLO SI EXISTE
