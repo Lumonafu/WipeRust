@@ -22,7 +22,6 @@ async function runCheck() {
     try {
         console.log('Consultando BattleMetrics (ID Directo)...');
 
-        // Petición directa al ID. Sin filtros, sin errores 400.
         const response = await axios.get(`https://api.battlemetrics.com/servers/${CONFIG.SERVER_ID}`);
         
         if (!response.data || !response.data.data) {
@@ -33,21 +32,22 @@ async function runCheck() {
         const attributes = response.data.data.attributes;
         const details = attributes.details;
 
-        // --- DEBUG: VERIFICACIÓN DE VARIABLES ---
-        console.log('--- Datos encontrados en la API ---');
-        console.log(`rust_born:      ${details.rust_born}`);
-        console.log(`rust_last_wipe: ${details.rust_last_wipe}`);
-        console.log('-----------------------------------');
+        // EXTRAEMOS IP Y PUERTO AUTOMÁTICAMENTE
+        const serverIP = attributes.ip;
+        const serverPort = attributes.port;
 
-        // USAMOS TU HALLAZGO: Priorizamos 'rust_born'
+        // --- DEBUG ---
+        console.log('--- Datos encontrados ---');
+        console.log(`rust_born:      ${details.rust_born}`);
+        console.log(`IP:             ${serverIP}:${serverPort}`);
+        console.log('-------------------------');
+
         const lastWipeTime = details.rust_born || details.rust_last_wipe;
 
         if (!lastWipeTime) {
-            console.log('Error: No se encontró fecha de wipe en la API.');
+            console.log('Error: No se encontró fecha de wipe.');
             return;
         }
-
-        console.log(`Fecha OFICIAL seleccionada: ${lastWipeTime}`);
 
         // Leer archivo local
         let savedData = { date: "" };
@@ -56,7 +56,6 @@ async function runCheck() {
         }
 
         // --- LÓGICA DE DETECCION ---
-        // Comparamos la fecha encontrada con la guardada
         if (lastWipeTime !== savedData.date) {
             console.log('¡FECHA DIFERENTE DETECTADA! Iniciando alerta...');
             
@@ -66,13 +65,18 @@ async function runCheck() {
             if (channel) {
                 const mapName = details.map || "Mapa Personalizado";
                 
-                // Formateamos la fecha para que se lea bonito en Discord
-                // Usamos <t:TIMESTAMP:F> para que Discord muestre la hora local de cada usuario
+                // Formato de tiempo relativo
                 const unixTime = Math.floor(new Date(lastWipeTime).getTime() / 1000);
-                const discordTime = `<t:${unixTime}:R>`; // Muestra "hace X días" o "hace X minutos"
+                const discordTime = `<t:${unixTime}:R>`; 
+
+                // Construimos el comando connect
+                const connectCommand = `client.connect ${serverIP}:${serverPort}`;
 
                 await channel.send({
-                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor <@&${CONFIG.ROLE_SOLO_NOOB}> detectó un cambio.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime}\n\n¡A poppear! :scrap: \nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
+                    // NOTA SOBRE EL EMOJI: 
+                    // Si el bot está en el servidor donde existe :scrap:, funcionará así.
+                    // Si ves que sale texto plano, necesitarás el ID: <:scrap:123456789>
+                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor <@&${CONFIG.ROLE_SOLO_NOOB}> hizo Wipe.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime}\n\n¡A poppear! :scrap:\n\n\`${connectCommand}\`\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
                 });
             }
 
