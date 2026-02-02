@@ -7,7 +7,8 @@ const CONFIG = {
     TOKEN: process.env.DISCORD_TOKEN,
     SERVER_ID: '31263425',
     CHANNEL_ID: '1467859052473225332',
-    ROLE_TO_PING: '1467859098979795151',
+    ROLE_TO_PING: '1467877032795967579',
+    ROLE_SOLO_NOOB: '1467859098979795151',
     ROLES_TO_REMOVE: ['1467859359144087646', '1467859416945659924']
 };
 
@@ -71,7 +72,7 @@ async function runCheck() {
                 const discordTime = `<t:${unixTime}:R>`; // Muestra "hace X días" o "hace X minutos"
 
                 await channel.send({
-                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor **[LATAM] SOLO NOOB** detectó un cambio.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime} (${new Date(lastWipeTime).toLocaleString()})\n\n¡A conectarse! 🔫\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
+                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor <@&${CONFIG.ROLE_SOLO_NOOB}> detectó un cambio.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime}\n\n¡A poppear! :scrap: \nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
                 });
             }
 
