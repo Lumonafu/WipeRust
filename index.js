@@ -19,28 +19,34 @@ const DB_FILE = './lastWipe.json';
 
 async function runCheck() {
     try {
-        console.log('Consultando BattleMetrics (Modo Búsqueda)...');
+        console.log('Consultando BattleMetrics (ID Directo)...');
 
-        // CAMBIO: Dejamos que axios construya la URL limpia automáticamente
-        const response = await axios.get('https://api.battlemetrics.com/servers', {
-            params: {
-                'filter[ids]': CONFIG.SERVER_ID, // Sin los corchetes vacíos []
-                'include': 'server',
-                't': Date.now() // Anti-caché
-            }
-        });
+        // Petición directa al ID. Sin filtros, sin errores 400.
+        const response = await axios.get(`https://api.battlemetrics.com/servers/${CONFIG.SERVER_ID}`);
         
-        // Verificamos si la API devolvió la lista vacía
-        if (!response.data.data || response.data.data.length === 0) {
-            console.log('Error: BattleMetrics devolvió una lista vacía. ¿El ID es correcto?');
+        if (!response.data || !response.data.data) {
+            console.log('Error: La API no devolvió datos.');
             return;
         }
 
-        const serverData = response.data.data[0]; 
-        const attributes = serverData.attributes;
-        const lastWipeTime = attributes.details.rust_last_wipe;
+        const attributes = response.data.data.attributes;
+        const details = attributes.details;
 
-        console.log(`Fecha detectada por API: ${lastWipeTime}`);
+        // --- DEBUG: VERIFICACIÓN DE VARIABLES ---
+        console.log('--- Datos encontrados en la API ---');
+        console.log(`rust_born:      ${details.rust_born}`);
+        console.log(`rust_last_wipe: ${details.rust_last_wipe}`);
+        console.log('-----------------------------------');
+
+        // USAMOS TU HALLAZGO: Priorizamos 'rust_born'
+        const lastWipeTime = details.rust_born || details.rust_last_wipe;
+
+        if (!lastWipeTime) {
+            console.log('Error: No se encontró fecha de wipe en la API.');
+            return;
+        }
+
+        console.log(`Fecha OFICIAL seleccionada: ${lastWipeTime}`);
 
         // Leer archivo local
         let savedData = { date: "" };
@@ -48,19 +54,24 @@ async function runCheck() {
             savedData = JSON.parse(fs.readFileSync(DB_FILE));
         }
 
-        // SI HAY WIPE NUEVO
-        if (lastWipeTime && lastWipeTime !== savedData.date) {
-            console.log('¡Nuevo Wipe detectado! Iniciando sesión en Discord...');
+        // --- LÓGICA DE DETECCION ---
+        // Comparamos la fecha encontrada con la guardada
+        if (lastWipeTime !== savedData.date) {
+            console.log('¡FECHA DIFERENTE DETECTADA! Iniciando alerta...');
             
             await client.login(CONFIG.TOKEN);
             const channel = await client.channels.fetch(CONFIG.CHANNEL_ID);
             
             if (channel) {
-                // Preparamos datos visuales
-                const mapName = attributes.details.map || "Mapa Personalizado";
+                const mapName = details.map || "Mapa Personalizado";
                 
+                // Formateamos la fecha para que se lea bonito en Discord
+                // Usamos <t:TIMESTAMP:F> para que Discord muestre la hora local de cada usuario
+                const unixTime = Math.floor(new Date(lastWipeTime).getTime() / 1000);
+                const discordTime = `<t:${unixTime}:R>`; // Muestra "hace X días" o "hace X minutos"
+
                 await channel.send({
-                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor **[LATAM] SOLO NOOB** acaba de hacer Wipe.\n\n**Mapa:** ${mapName}\n**Fecha:** ${new Date(lastWipeTime).toLocaleString()}\n\n¡A conectarse! 🔫\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
+                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor **[LATAM] SOLO NOOB** detectó un cambio.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime} (${new Date(lastWipeTime).toLocaleString()})\n\n¡A conectarse! 🔫\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
                 });
             }
 
@@ -80,13 +91,13 @@ async function runCheck() {
 
             // Guardar nueva fecha
             fs.writeFileSync(DB_FILE, JSON.stringify({ date: lastWipeTime }));
-            console.log('Base de datos actualizada.');
+            console.log('Base de datos actualizada correctamente.');
         } else {
-            console.log('No hay wipe nuevo. Terminando.');
+            console.log('La fecha es idéntica a la guardada. No hay wipe nuevo.');
         }
 
     } catch (error) {
-        console.error('Error detallado:', error.response ? error.response.data : error.message);
+        console.error('Error Fatal:', error.message);
     } finally {
         console.log('Cerrando proceso.');
         process.exit(0);
