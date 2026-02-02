@@ -6,9 +6,9 @@ const CONFIG = {
     // Usamos process.env para que GitHub Secrets inyecte el token
     TOKEN: process.env.DISCORD_TOKEN, 
     SERVER_ID: '31263425', 
-    CHANNEL_ID: 'TU_ID_CANAL', // Pon aquí tus IDs reales o usa variables de entorno
-    ROLE_TO_PING: 'TU_ID_ROL_WIPE',
-    ROLES_TO_REMOVE: ['ID_ROL_1', 'ID_ROL_2'] 
+    CHANNEL_ID: '1467859052473225332', // Pon aquí tus IDs reales o usa variables de entorno
+    ROLE_TO_PING: '1467859098979795151',
+    ROLES_TO_REMOVE: ['1467859359144087646', '1467859416945659924'] 
 };
 
 const client = new Client({
