@@ -32,14 +32,17 @@ async function runCheck() {
         const attributes = response.data.data.attributes;
         const details = attributes.details;
 
-        // EXTRAEMOS IP Y PUERTO AUTOMÁTICAMENTE
         const serverIP = attributes.ip;
         const serverPort = attributes.port;
+
+        // OBTENEMOS LA IMAGEN DEL MAPA
+        // Si battlemetrics tiene la imagen del mapa, la usamos.
+        const mapImageUrl = details.rust_headerimage;
 
         // --- DEBUG ---
         console.log('--- Datos encontrados ---');
         console.log(`rust_born:      ${details.rust_born}`);
-        console.log(`IP:             ${serverIP}:${serverPort}`);
+        console.log(`Mapa URL:       ${mapImageUrl ? 'Sí tiene' : 'No tiene'}`);
         console.log('-------------------------');
 
         const lastWipeTime = details.rust_born || details.rust_last_wipe;
@@ -49,7 +52,6 @@ async function runCheck() {
             return;
         }
 
-        // Leer archivo local
         let savedData = { date: "" };
         if (fs.existsSync(DB_FILE)) {
             savedData = JSON.parse(fs.readFileSync(DB_FILE));
@@ -64,23 +66,23 @@ async function runCheck() {
             
             if (channel) {
                 const mapName = details.map || "Mapa Personalizado";
-                
-                // Formato de tiempo relativo
                 const unixTime = Math.floor(new Date(lastWipeTime).getTime() / 1000);
                 const discordTime = `<t:${unixTime}:R>`; 
-
-                // Construimos el comando connect
                 const connectCommand = `client.connect ${serverIP}:${serverPort}`;
 
-                await channel.send({
-                    // NOTA SOBRE EL EMOJI: 
-                    // Si el bot está en el servidor donde existe :scrap:, funcionará así.
-                    // Si ves que sale texto plano, necesitarás el ID: <:scrap:123456789>
-                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor <@&${CONFIG.ROLE_SOLO_NOOB}> hizo Wipe.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime}\n\n¡A poppear! :scrap:\n\n\`${connectCommand}\`\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
-                });
+                // PREPARAMOS EL MENSAJE
+                const messageOptions = {
+                    content: `||<@&${CONFIG.ROLE_TO_PING}>|| \n# 🚨 ¡SERVIDOR WIPEADO! 🚨\n\nEl servidor <@&${CONFIG.ROLE_SOLO_NOOB}> se hizo Wipe.\n\n**Mapa:** ${mapName}\n**Wipeado:** ${discordTime}\n\n¡A poppear! <:scrap:1467876485128916992>\n\n\`${connectCommand}\`\n\nhttps://www.battlemetrics.com/servers/rust/${CONFIG.SERVER_ID}`
+                };
+
+                // AGREGAMOS LA IMAGEN SOLO SI EXISTE
+                if (mapImageUrl) {
+                    messageOptions.files = [mapImageUrl];
+                }
+
+                await channel.send(messageOptions);
             }
 
-            // Borrar roles
             const guild = channel.guild;
             await guild.members.fetch(); 
             
@@ -94,7 +96,6 @@ async function runCheck() {
                 }
             }
 
-            // Guardar nueva fecha
             fs.writeFileSync(DB_FILE, JSON.stringify({ date: lastWipeTime }));
             console.log('Base de datos actualizada correctamente.');
         } else {
