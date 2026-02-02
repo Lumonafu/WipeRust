@@ -37,7 +37,7 @@ async function runCheck() {
 
         // OBTENEMOS LA IMAGEN DEL MAPA
         // Si battlemetrics tiene la imagen del mapa, la usamos.
-        const mapImageUrl = details.rust_headerimage;
+        const mapImageUrl = "https://cdn.discordapp.com/attachments/1293720649164128257/1467905235707101337/artic.png?ex=698214c8&is=6980c348&hm=312b66fd8fcdbd820029390f85cc15e2e6a40d778a041133efef80249dd38f55&";
 
         // --- DEBUG ---
         console.log('--- Datos encontrados ---');
