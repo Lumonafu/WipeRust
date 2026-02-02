@@ -1,0 +1,37 @@
+name: Check Rust Wipe
+
+on:
+  schedule:
+    # Esto se ejecuta cada 15 minutos.
+    # Puedes cambiar el 15 por 30 o 60. GitHub no permite menos de 5 min.
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Esto permite que le des a un botón "Run" manual para probar
+
+jobs:
+  check-wipe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permiso IMPORTANTE para poder guardar el lastWipe.json
+
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+
+    - name: Instalar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Instalar dependencias
+      run: npm install
+
+    - name: Ejecutar script del bot
+      env:
+        DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      run: node index.js
+
+    - name: Guardar cambios si hubo Wipe (Commit y Push)
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "Actualizar fecha de wipe [skip ci]"
+        file_pattern: lastWipe.json
